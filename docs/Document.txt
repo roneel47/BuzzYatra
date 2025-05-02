@@ -1,0 +1,169 @@
+## Buzzyatra - Document Set
+
+---
+
+### 1. Product Requirements Document (PRD)
+
+**Product Name:** Buzzyatra
+**Target Audience:** Daily BMTC commuters, tourists, students, working professionals in Bengaluru
+**Platforms:** Android (v1), iOS (v2)
+
+#### Problem Statement
+
+Navigating Bengaluru's public transport system is confusing for newcomers and lacks integrated stop alerts and safety features.
+
+#### Goals
+
+* Simplify BMTC route discovery and fare calculation.
+* Provide proactive stop notifications.
+* Improve user safety with SOS features.
+
+#### Key Features
+
+1. Intelligent route & fare finder.
+2. Proactive stop alerts.
+3. Integrated emergency SOS system.
+4. Future: Real-time tracking, offline routes, language support, digital payments.
+
+#### User Stories
+
+* As a commuter, I want to search routes from A to B and know which bus to take.
+* As a tourist, I want to be alerted when my stop is near.
+* As a user, I want a single-tap SOS function that sends my GPS location to my contacts.
+
+#### Success Metrics
+
+* App downloads > 10K within 3 months.
+* 85%+ user satisfaction on stop alerts.
+* SOS feature activated successfully in real-world tests.
+
+---
+
+### 2. Design Requirements Document (DRD)
+
+#### UI/UX Design Guidelines
+
+* Clean, minimal layout with bottom navigation bar
+* Map-centric route and bus visualization
+* Simple toggle for alerts and SOS functions
+* Dark and light mode options
+
+#### Technology Stack
+
+* **Frontend:** Flutter / React Native
+* **Backend:** Firebase / Node.js
+* **APIs:** Google Maps, BMTC Data (GTFS), Twilio (for SOS SMS)
+
+#### Data Requirements
+
+* GTFS feed for BMTC schedules
+* User GPS tracking (with permission)
+* Contact list access (for SOS configuration)
+
+#### Accessibility
+
+* Voice alerts
+* Large tap zones
+* Colorblind-friendly palette
+
+---
+
+### 3. Module Breakdown (Components)
+
+#### 1. Route Discovery Module
+
+* Input origin & destination
+* Fetch BMTC buses via GTFS API
+* Calculate optimal routes & fares
+* Display route on map
+
+#### 2. Stop Alert System
+
+* Track user location in real-time
+* Alert (audio, vibration, visual) within preset radius
+* Customize notification settings
+
+#### 3. Emergency SOS Module
+
+* Save trusted contact list
+* Trigger SOS with GPS and message
+* Send real-time location via SMS/notification
+
+#### 4. User Preferences
+
+* Alert radius setting
+* Notification type (audio/vibration/visual)
+* Language setting (English/Kannada)
+
+#### 5. Admin/Backend Dashboard (Future)
+
+* Upload real-time BMTC feed updates
+* Manage incident reports & emergency feedback
+
+---
+
+### 4. Wireframes (Descriptions)
+
+#### 1. Home Screen
+
+* Input boxes for 'From' and 'To' locations
+* Search button
+* Quick access to saved routes
+
+#### 2. Route Results
+
+* List of suggested BMTC routes with map view
+* Each route card shows time, fare, transfers
+
+#### 3. In-Transit View
+
+* Map showing user location and stop markers
+* Visual & audio alert toggle
+* Countdown to destination alert
+
+#### 4. SOS Screen
+
+* Prominent SOS button
+* Preview of current location (map + address)
+* List of emergency contacts
+
+---
+
+### 5. System Architecture (Simplified)
+
+```
+User Device
+  |  
+  |---> Buzzyatra Mobile App
+           |---> Google Maps API (location, map)
+           |---> GTFS API (BMTC schedules & routes)
+           |---> Firebase Backend (user data, preferences)
+           |---> Twilio API (SOS messaging)
+```
+
+---
+
+### 6. API Structure (Key Endpoints)
+
+#### 1. `/api/routes`
+
+* **POST** — Takes `origin`, `destination`
+* **Response:** List of optimal routes, stops, fares
+
+#### 2. `/api/alerts`
+
+* **POST** — Set destination stop, alert radius
+* **PUT** — Update alert settings
+* **DELETE** — Clear alert
+
+#### 3. `/api/sos`
+
+* **POST** — Trigger SOS with GPS, contacts, message
+
+#### 4. `/api/user/preferences`
+
+* **GET/POST** — Retrieve/update user settings (alerts, language, saved routes)
+
+---
+
+Let me know if you'd like to visualize these in a flowchart, export to PDF, or build an interactive prototype next.
