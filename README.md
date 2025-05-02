@@ -86,7 +86,6 @@ We welcome contributions! Please check the [CONTRIBUTING.md](CONTRIBUTING.md) fo
 ---
 
 <div align="center">
-  <img src="https://i.imgur.com/oU5I5zR.png" width="60%" alt="App Preview"/>
   <br/><br/>
   <i>Making Bengaluru transit safer, smarter, and stress-free.</i>
 </div>
