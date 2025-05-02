@@ -1,5 +1,10 @@
-## BuzzYatra
-Your Smart Bengaluru Transit Companion
+<div align="center">
+  <img src="https://i.imgur.com/1rIM7Nn.png" alt="Buzzyatra Logo" width="120"/>
+  <h1>Buzzyatra</h1>
+  <p><b>Your Smart Bengaluru Transit Companion</b></p>
+  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS-green?style=flat-square"/>
+  <img src
+
 
 ## 🌐 Overview
 
