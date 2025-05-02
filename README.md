@@ -1,5 +1,5 @@
 ## BuzzYatra
- - Your Smart Bengaluru Transit Companion
+Your Smart Bengaluru Transit Companion
 
 ## 🌐 Overview
 
