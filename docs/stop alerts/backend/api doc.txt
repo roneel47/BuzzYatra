@@ -1,0 +1,34 @@
+base url of open street map API-
+https://api.openstreetmap.org/
+
+the key components present in it are 
+1. Map Zoom
+2. latitude
+3. Longitude
+4. type of layer
+
+https://www.openstreetmap.org/#map=20/12.9987861/77.5842060&layers=T
+
+consider this as an example
+
+#map represents the zoom level
+12.9987861 represents latitude
+77.5842060 represents longitude
+&layer=T represents the type of layer and in this case it is transport
+
+OpenStreetMap Javascript Example
+	// OpenStreetMap API Example
+	const response = await fetch('http://wiki.openstreetmap.org/wiki/API', {
+    		method: 'GET',
+    		headers: {
+        		'Content-Type': 'application/json'
+   		 }
+	});	
+
+	const data = await response.json();
+	console.log(data);
+(source-https://publicapis.io/open-street-map-api)
+
+this document is based on this url-https://wiki.openstreetmap.org/wiki/API
+
+dated on 15/08/2025
