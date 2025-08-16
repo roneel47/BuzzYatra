@@ -21,14 +21,36 @@ app.get("/", (req, res) => {
   res.send("Welcome to the BuzzYatra API");
 });
 
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // Earth radius in meters
+
+  const phi1 = lat1 * Math.PI / 180;
+  const phi2 = lat2 * Math.PI / 180;
+  const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+  const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+            Math.cos(phi1) * Math.cos(phi2) *
+            Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const d = R * c; // in meters
+  return d;
+}
+
+
 /**
  * POST /api/getRoute
  * body: { from: "StationName", to: "StationName" }
  */
 app.post('/api/getRoute', async (req, res) => {
-  const { from, to } = req.body;
+  const { from, to, userlat, userlong } = req.body;
   if (!from || !to) {
     return res.status(400).json({ error: 'Provide both from and to' });
+  }
+  if (!userlat || !userlong) {
+    return res.status(400).json({ error: 'Provide user latitude and longitude' });
   }
 
   try {
@@ -61,6 +83,12 @@ app.post('/api/getRoute', async (req, res) => {
     const distanceMetersFormatted = "approx. " + Math.round(distanceMeters / 1000) + " km";
     // Convert to [lat, lng] for frontend consumption if needed
     const coordinatesLatLng = coordinatesLngLat.map(c => [c[1], c[0]]);
+    const distance = getDistance(userlat, userlong, toStation.lat, toStation.long);
+    if(distance < 300){
+        console.log("Alert " + distance);
+    } else {
+        console.log("Distance is far Alert " + distance);
+    }
 
     return res.json({
       routeCoordinates: coordinatesLatLng,
