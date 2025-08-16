@@ -12,6 +12,7 @@ app.use(express.json());
 
 // connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
+  dbName: 'BuzzYatra',
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => console.log('MongoDB connected'))
