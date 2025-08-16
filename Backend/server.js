@@ -17,6 +17,10 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB error:', err));
 
+app.get("/", (req, res) => {
+  res.send("Welcome to the BuzzYatra API");
+});
+
 /**
  * POST /api/getRoute
  * body: { from: "StationName", to: "StationName" }
