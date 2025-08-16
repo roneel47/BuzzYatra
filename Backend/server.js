@@ -58,7 +58,7 @@ app.post('/api/getRoute', async (req, res) => {
     const distanceMeters = route.properties.summary.distance;
     const durationSeconds = route.properties.summary.duration;
     const durationSecondsFormatted = Math.round(durationSeconds / 60) + " min";
-    const distanceMetersFormatted = (distanceMeters / 1000) + " km";
+    const distanceMetersFormatted = "approx. " + Math.round(distanceMeters / 1000) + " km";
     // Convert to [lat, lng] for frontend consumption if needed
     const coordinatesLatLng = coordinatesLngLat.map(c => [c[1], c[0]]);
 
