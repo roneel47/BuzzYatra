@@ -19,7 +19,7 @@ mongoose.connect(process.env.MONGO_URI, {
   .catch(err => console.error('MongoDB error:', err));
 
 app.get("/", (req, res) => {
-  res.send("Welcome to the BuzzYatra API");
+  res.send("Welcome to the BuzzYatra Backend");
 });
 
 function getDistance(lat1, lon1, lat2, lon2) {
