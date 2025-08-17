@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="/src/style.css" rel="stylesheet">
+</head>
+<body>
+  <h1 class="text-3xl font-bold underline">
+    Hello world!
+  </h1>
+  
+  <label>From:</label>
+  <select id="fromSelect"></select>
+
+  <br>
+
+  <div id="to" class="text-center">
+    <label>To:</label>
+    <select id="toSelect"></select>
+  </div>
+
+  <script>
+    async function handleSubmit(){
+      const fromSelect = document.getElementById("fromSelect");
+      const toSelect = document.getElementById("toSelect");
+
+      const fromStation = fromSelect.value;
+      const toStation = toSelect.value;
+      const userlat = 12.9716;  // Example latitude
+      const userlong = 77.5946;  // Example longitude
+
+      try {
+        const response = await fetch('http://localhost:4000/api/getRoute', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ from: fromStation, to: toStation, userlat: userlat, userlong: userlong })
+        });
+
+        const result = await response.json();
+  console.log("Response from backend:", result);
+        const { distanceMetersFormatted, durationSecondsFormatted } = result;
+
+document.getElementById("distance").textContent = distanceMetersFormatted;
+document.getElementById("duration").textContent = durationSecondsFormatted;
+
+
+
+} catch (error) {
+  console.error("Request failed:", error);
+  
+
+}
+    }
+    async function loadStations() {
+      try {
+        const response = await fetch('http://localhost:4000/api/getStation');
+        const data = await response.json();
+      
+        const fromSelect = document.getElementById("fromSelect");
+        const toSelect = document.getElementById("toSelect");
+
+        data.forEach(station => {
+          const option1 = document.createElement("option");
+          option1.value = station.name;
+          option1.text = station.name;
+          fromSelect.appendChild(option1);
+
+          const option2 = document.createElement("option");
+          option2.value = station.name;
+          option2.text = station.name;
+          toSelect.appendChild(option2);
+        });
+      } catch (error) {
+        console.error("Error fetching stations:", error);
+      }
+    }
+
+    loadStations();
+  </script>
+  <button onclick="handleSubmit()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+    Submit
+  </button>
+  <div id="result" class="text-center mt-4">
+    <label>Distance: </label>
+    <span id="distance"></span>
+    <br>
+    <label>Duration:</label>
+    <span id="duration"></span>
+  </div>
+</body>
+</html>
