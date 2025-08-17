@@ -104,5 +104,17 @@ app.post('/api/getRoute', async (req, res) => {
   }
 });
 
+app.get('/api/getStation', async (req, res) => {
+  try {
+    // If you only need names, project only name field
+    const stations = await Station.find({}, 'name');  
+    // To return only names, change to: Station.find({}, 'name')
+    res.json(stations);
+  } catch (err) {
+    console.error('Error fetching stations:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
