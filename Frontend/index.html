@@ -1,15 +1,17 @@
 <!doctype html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="/src/style.css" rel="stylesheet">
 </head>
+
 <body>
   <h1 class="text-3xl font-bold underline">
-    Hello world!
+    Welcome To BuzzYatra!
   </h1>
-  
+
   <label>From:</label>
   <select id="fromSelect"></select>
 
@@ -21,7 +23,7 @@
   </div>
 
   <script>
-    async function handleSubmit(){
+    async function handleSubmit() {
       const fromSelect = document.getElementById("fromSelect");
       const toSelect = document.getElementById("toSelect");
 
@@ -40,25 +42,25 @@
         });
 
         const result = await response.json();
-  console.log("Response from backend:", result);
+        console.log("Response from backend:", result);
         const { distanceMetersFormatted, durationSecondsFormatted } = result;
 
-document.getElementById("distance").textContent = distanceMetersFormatted;
-document.getElementById("duration").textContent = durationSecondsFormatted;
+        document.getElementById("distance").textContent = distanceMetersFormatted;
+        document.getElementById("duration").textContent = durationSecondsFormatted;
 
 
 
-} catch (error) {
-  console.error("Request failed:", error);
-  
+      } catch (error) {
+        console.error("Request failed:", error);
 
-}
+
+      }
     }
     async function loadStations() {
       try {
         const response = await fetch('http://localhost:4000/api/getStation');
         const data = await response.json();
-      
+
         const fromSelect = document.getElementById("fromSelect");
         const toSelect = document.getElementById("toSelect");
 
@@ -91,4 +93,5 @@ document.getElementById("duration").textContent = durationSecondsFormatted;
     <span id="duration"></span>
   </div>
 </body>
+
 </html>
