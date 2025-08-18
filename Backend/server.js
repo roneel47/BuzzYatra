@@ -22,6 +22,7 @@ app.get("/", (req, res) => {
   res.send("Welcome to the BuzzYatra Backend");
 });
 
+/*Haversine Formula*/
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371e3; // Earth radius in meters
 
