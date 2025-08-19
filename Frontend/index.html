@@ -94,29 +94,30 @@
     document.getElementById('display-from').textContent = fromStation;
     document.getElementById('display-to').textContent = toStation;
 
-    // Example user coords
-    const userlat = 12.9716;
-    const userlong = 77.5946;
+    // Get user location before making the API call
+    navigator.geolocation.getCurrentPosition(async position => {
+      const userlat = position.coords.latitude;
+      const userlong = position.coords.longitude;
+      try {
+        const response = await fetch('http://localhost:4000/api/getRoute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: fromStation, to: toStation, userlat, userlong })
+        });
+        const result = await response.json();
+        console.log("Backend:", result);
 
-    try {
-      const response = await fetch('http://localhost:4000/api/getRoute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: fromStation, to: toStation, userlat, userlong })
-      });
-      const result = await response.json();
-      console.log("Backend:", result);
+        // If your backend sends { distanceMetersFormatted, durationSecondsFormatted, alertdis }
+        const { distanceMetersFormatted, durationSecondsFormatted, alertdis } = result;
 
-      // If your backend sends { distanceMetersFormatted, durationSecondsFormatted, alertdis }
-      const { distanceMetersFormatted, durationSecondsFormatted, alertdis } = result;
+        document.getElementById("distance").textContent = distanceMetersFormatted || '--';
+        document.getElementById("duration").textContent = durationSecondsFormatted || '--';
+        document.getElementById("alert").textContent = alertdis || '--';
 
-      document.getElementById("distance").textContent = distanceMetersFormatted || '--';
-      document.getElementById("duration").textContent = durationSecondsFormatted || '--';
-      document.getElementById("alert").textContent = alertdis || '--';
-
-    } catch (err) {
-      console.error("Request failed:", err);
-    }
+      } catch (err) {
+        console.error("Request failed:", err);
+      }
+    });
   });
 
   loadStations();
