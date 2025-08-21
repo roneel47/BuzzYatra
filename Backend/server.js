@@ -47,7 +47,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
  * body: { from: "StationName", to: "StationName" }
  */
 app.post('/api/getRoute', async (req, res) => {
-  const { from, to, userlat, userlong } = req.body;
+  const { from, to, userlat, userlong, alertDistance } = req.body;
   if (!from || !to) {
     return res.status(400).json({ error: 'Provide both from and to' });
   }
@@ -87,7 +87,7 @@ app.post('/api/getRoute', async (req, res) => {
     const coordinatesLatLng = coordinatesLngLat.map(c => [c[1], c[0]]);
     const distance = getDistance(userlat, userlong, toStation.lat, toStation.long);
     const distanceFormatted = Math.round(distance / 1000) + " km";
-    if(distance < 300){
+    if(distance < alertDistance){
          alertdis = "Alert " + distance + " (" + distanceFormatted + ")";
     } else {
          alertdis = "Distance is far Alert " + distance + " (" + distanceFormatted + ")";

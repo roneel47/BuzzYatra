@@ -1,127 +1,143 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BuzzYatra</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
   <style>
     body {
       font-family: 'Poppins', sans-serif;
     }
   </style>
 </head>
-<body class="bg-gray-900 flex items-center justify-center h-screen">
 
-<div class="w-full max-w-4xl mx-auto p-8 flex space-x-8">
+<body class="bg-gray-900 flex flex-col items-center justify-center h-screen">
 
-  <!-- Left Card -->
-  <div class="w-1/2 bg-gray-800 bg-opacity-50 rounded-2xl p-8 backdrop-filter backdrop-blur-lg border border-gray-700">
-    <div class="text-center">
-      <h1 class="text-4xl font-bold text-white mb-8">Welcome to BuzzYatra!</h1>
-      <form class="space-y-6" id="route-form">
-        <div>
-          <label class="block text-left text-white mb-2" for="fromSelect">From:</label>
-          <select id="fromSelect" name="from" class="w-full bg-gray-700 text-white rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-green-400"></select>
-        </div>
-        <div>
-          <label class="block text-left text-white mb-2" for="toSelect">To:</label>
-          <select id="toSelect" name="to" class="w-full bg-gray-700 text-white rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-green-400"></select>
-        </div>
-        <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Submit</button>
-      </form>
-    </div>
-  </div>
+  <div class="w-full max-w-4xl mx-auto p-8 flex space-x-8">
 
-  <!-- Right Card -->
-  <div class="w-1/2 bg-gray-800 bg-opacity-50 rounded-2xl p-8 backdrop-filter backdrop-blur-lg border border-gray-700 text-white">
-    <h2 class="text-3xl font-bold mb-8 text-center">Route Details</h2>
-    <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <span class="font-medium">From:</span>
-        <div class="w-1/2 bg-gray-700 rounded-lg p-3">
-          <span class="text-gray-300" id="display-from">--</span>
-        </div>
+    <!-- Left Card -->
+    <div
+      class="w-1/2 bg-gray-800 bg-opacity-50 rounded-2xl p-8 backdrop-filter backdrop-blur-lg border border-gray-700">
+      <div class="text-center">
+        <h1 class="text-4xl font-bold text-white mb-8">Welcome to BuzzYatra!</h1>
+        <form class="space-y-6" id="route-form">
+          <div>
+            <label class="block text-left text-white mb-2" for="fromSelect">From:</label>
+            <select id="fromSelect" name="from"
+              class="w-full bg-gray-700 text-white rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-green-400"></select>
+          </div>
+          <div>
+            <label class="block text-left text-white mb-2" for="toSelect">To:</label>
+            <select id="toSelect" name="to"
+              class="w-full bg-gray-700 text-white rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-green-400"></select>
+          </div>
+          <div>
+            <label class="block text-left text-white mb-2" for="alertme">Alert Metre:</label>
+            <input required placeholder="Enter the distance in metres" id="alertme" name="alertme"
+              class="w-full bg-gray-700 text-white rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-green-400"></input>
+          </div>
+          <button type="submit"
+            class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Submit</button>
+        </form>
       </div>
-      <div class="flex items-center justify-between">
-        <span class="font-medium">To:</span>
-        <div class="w-1/2 bg-gray-700 rounded-lg p-3">
-          <span class="text-gray-300" id="display-to">--</span>
-        </div>
-      </div>
-      <div class="border-t border-gray-700 my-4"></div>
-      <p><span class="font-medium">Distance:</span> <span id="distance">--</span></p>
-      <p><span class="font-medium">Duration:</span> <span id="duration">--</span></p>
-      <p><span class="font-medium">Alert:</span> <span class="text-yellow-400" id="alert">--</span></p>
     </div>
+
+    <!-- Right Card -->
+    <div
+      class="w-1/2 bg-gray-800 bg-opacity-50 rounded-2xl p-8 backdrop-filter backdrop-blur-lg border border-gray-700 text-white">
+      <h2 class="text-3xl font-bold mb-8 text-center">Route Details</h2>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="font-medium">From:</span>
+          <div class="w-1/2 bg-gray-700 rounded-lg p-3">
+            <span class="text-gray-300" id="display-from">--</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="font-medium">To:</span>
+          <div class="w-1/2 bg-gray-700 rounded-lg p-3">
+            <span class="text-gray-300" id="display-to">--</span>
+          </div>
+        </div>
+        <div class="border-t border-gray-700 my-4"></div>
+        <p><span class="font-medium">Distance:</span> <span id="distance">--</span></p>
+        <p><span class="font-medium">Duration:</span> <span id="duration">--</span></p>
+        <p><span class="font-medium">Alert:</span> <span class="text-yellow-400" id="alert">--</span></p>
+      </div>
+    </div>
+
   </div>
+  <div class="w-full max-w-4xl mx-auto p-8 bg-gray-800 bg-opacity-50 rounded-2xl text-white">
 
-</div>
-
-<script>
-  async function loadStations() {
-    try {
-      const response = await fetch('http://localhost:4000/api/getStation');
-      const data = await response.json();
-
-      const fromSelect = document.getElementById("fromSelect");
-      const toSelect = document.getElementById("toSelect");
-
-      data.forEach(station => {
-        const option1 = document.createElement("option");
-        option1.value = station.name;
-        option1.text = station.name;
-        fromSelect.appendChild(option1);
-
-        const option2 = document.createElement("option");
-        option2.value = station.name;
-        option2.text = station.name;
-        toSelect.appendChild(option2);
-      });
-    } catch (error) {
-      console.error("Error fetching stations:", error);
-    }
-  }
-
-  // form submit
-  document.getElementById('route-form').addEventListener('submit', async function(event) {
-    event.preventDefault();
-
-    const fromStation = document.getElementById('fromSelect').value;
-    const toStation = document.getElementById('toSelect').value;
-
-    document.getElementById('display-from').textContent = fromStation;
-    document.getElementById('display-to').textContent = toStation;
-
-    // Get user location before making the API call
-    navigator.geolocation.getCurrentPosition(async position => {
-      const userlat = position.coords.latitude;
-      const userlong = position.coords.longitude;
+  </div>
+  </div>
+  <script>
+    async function loadStations() {
       try {
-        const response = await fetch('http://localhost:4000/api/getRoute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ from: fromStation, to: toStation, userlat, userlong })
+        const response = await fetch('http://localhost:4000/api/getStation');
+        const data = await response.json();
+
+        const fromSelect = document.getElementById("fromSelect");
+        const toSelect = document.getElementById("toSelect");
+
+        data.forEach(station => {
+          const option1 = document.createElement("option");
+          option1.value = station.name;
+          option1.text = station.name;
+          fromSelect.appendChild(option1);
+
+          const option2 = document.createElement("option");
+          option2.value = station.name;
+          option2.text = station.name;
+          toSelect.appendChild(option2);
         });
-        const result = await response.json();
-        console.log("Backend:", result);
-
-        // If your backend sends { distanceMetersFormatted, durationSecondsFormatted, alertdis }
-        const { distanceMetersFormatted, durationSecondsFormatted, alertdis } = result;
-
-        document.getElementById("distance").textContent = distanceMetersFormatted || '--';
-        document.getElementById("duration").textContent = durationSecondsFormatted || '--';
-        document.getElementById("alert").textContent = alertdis || '--';
-
-      } catch (err) {
-        console.error("Request failed:", err);
+      } catch (error) {
+        console.error("Error fetching stations:", error);
       }
-    });
-  });
+    }
 
-  loadStations();
-</script>
+    // form submit
+    document.getElementById('route-form').addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const alertDistance = document.getElementById('alertme').value;
+      const fromStation = document.getElementById('fromSelect').value;
+      const toStation = document.getElementById('toSelect').value;
+
+      document.getElementById('display-from').textContent = fromStation;
+      document.getElementById('display-to').textContent = toStation;
+      document.getElementById('alert').textContent = alertDistance;
+      // Get user location before making the API call
+      navigator.geolocation.getCurrentPosition(async position => {
+        const userlat = position.coords.latitude;
+        const userlong = position.coords.longitude;
+        try {
+          const response = await fetch('http://localhost:4000/api/getRoute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from: fromStation, to: toStation, userlat, userlong, alertDistance })
+          });
+          const result = await response.json();
+          console.log("Backend:", result);
+
+          // If your backend sends { distanceMetersFormatted, durationSecondsFormatted, alertdis }
+          const { distanceMetersFormatted, durationSecondsFormatted, alertdis } = result;
+
+          document.getElementById("distance").textContent = distanceMetersFormatted || '--';
+          document.getElementById("duration").textContent = durationSecondsFormatted || '--';
+          document.getElementById("alert").textContent = alertdis || '--';
+
+        } catch (err) {
+          console.error("Request failed:", err);
+        }
+      });
+    });
+
+    loadStations();
+  </script>
 
 </body>
+
 </html>
