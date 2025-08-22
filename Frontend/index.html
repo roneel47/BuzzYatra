@@ -168,8 +168,14 @@
             // From/To markers based on route endpoints
             fromMarker = L.marker(routeCoordinates[0]).addTo(map).bindPopup(`From: ${fromStation}`);
             toMarker = L.marker(routeCoordinates[routeCoordinates.length - 1]).addTo(map).bindPopup(`To: ${toStation}`);
-            // User marker
-            userMarker = L.marker([userlat, userlong]).addTo(map).bindPopup('You are here');
+            // User marker (distinct style to avoid confusion)
+            userMarker = L.circleMarker([userlat, userlong], {
+              radius: 8,
+              color: '#ffffff',       // border color
+              weight: 2,
+              fillColor: '#ef4444',   // Tailwind red-500
+              fillOpacity: 0.9
+            }).addTo(map).bindPopup('Your location');
             // Fit bounds
             const bounds = L.latLngBounds(routeCoordinates.concat([[userlat, userlong]]));
             map.fitBounds(bounds, { padding: [20, 20] });
