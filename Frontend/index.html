@@ -1,204 +1,33 @@
 <!doctype html>
 <html lang="en">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BuzzYatra</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
-  <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-    }
-  </style>
-</head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BuzzYatra</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <style>
+      body { font-family: 'Poppins', sans-serif; }
+    </style>
+  </head>
 
-<body class="bg-gray-900 flex flex-col items-center justify-center h-screen">
+  <body class="bg-gray-900">
+    <div id="root"></div>
 
-  <div class="w-full max-w-4xl mx-auto p-8 flex space-x-8">
-
-    <!-- Left Card -->
-    <div
-      class="w-1/2 bg-gray-800 bg-opacity-50 rounded-2xl p-8 backdrop-filter backdrop-blur-lg border border-gray-700">
-      <div class="text-center">
-        <h1 class="text-4xl font-bold text-white mb-8">Welcome to BuzzYatra!</h1>
-        <form class="space-y-6" id="route-form">
-          <div>
-            <label class="block text-left text-white mb-2" for="fromSelect">From:</label>
-            <select id="fromSelect" name="from"
-              class="w-full bg-gray-700 text-white rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-green-400"></select>
-          </div>
-          <div>
-            <label class="block text-left text-white mb-2" for="toSelect">To:</label>
-            <select id="toSelect" name="to"
-              class="w-full bg-gray-700 text-white rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-green-400"></select>
-          </div>
-          <div>
-            <label class="block text-left text-white mb-2" for="alertme">Alert Metre:</label>
-            <input required placeholder="Enter the distance in metres" id="alertme" name="alertme"
-              class="w-full bg-gray-700 text-white rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-green-400"></input>
-          </div>
-          <button type="submit"
-            class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Submit</button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Right Card -->
-    <div
-      class="w-1/2 bg-gray-800 bg-opacity-50 rounded-2xl p-8 backdrop-filter backdrop-blur-lg border border-gray-700 text-white">
-      <h2 class="text-3xl font-bold mb-8 text-center">Route Details</h2>
-      <div class="space-y-4">
-        <div class="flex items-center justify-between">
-          <span class="font-medium">From:</span>
-          <div class="w-1/2 bg-gray-700 rounded-lg p-3">
-            <span class="text-gray-300" id="display-from">--</span>
-          </div>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="font-medium">To:</span>
-          <div class="w-1/2 bg-gray-700 rounded-lg p-3">
-            <span class="text-gray-300" id="display-to">--</span>
-          </div>
-        </div>
-        <div class="border-t border-gray-700 my-4"></div>
-        <p><span class="font-medium">Distance:</span> <span id="distance">--</span></p>
-        <p><span class="font-medium">Duration:</span> <span id="duration">--</span></p>
-        <p><span class="font-medium">Alert:</span> <span class="text-yellow-400" id="alert">--</span></p>
-      </div>
-      <!-- Map -->
-      <div id="map" class="mt-6 rounded-lg overflow-hidden border border-gray-700" style="height: 340px;"></div>
-    </div>
-
-  </div>
-  </div>
-  <!-- Leaflet JS -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin="">
-  </script>
-  <script>
-    // ----- Leaflet Map Setup -----
-    let map, routeLayer, fromMarker, toMarker, userMarker, alertCircle;
-    function initMap() {
-      if (map) return;
-      map = L.map('map').setView([20.5937, 78.9629], 5); // Default center
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
-    }
-    function clearMapLayers() {
-      if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
-      if (fromMarker) { map.removeLayer(fromMarker); fromMarker = null; }
-      if (toMarker) { map.removeLayer(toMarker); toMarker = null; }
-      if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
-      if (alertCircle) { map.removeLayer(alertCircle); alertCircle = null; }
-    }
-
-    async function loadStations() {
-      try {
-        const response = await fetch('http://localhost:4000/api/getStation');
-        const data = await response.json();
-
-        const fromSelect = document.getElementById("fromSelect");
-        const toSelect = document.getElementById("toSelect");
-
-        data.forEach(station => {
-          const option1 = document.createElement("option");
-          option1.value = station.name;
-          option1.text = station.name;
-          fromSelect.appendChild(option1);
-
-          const option2 = document.createElement("option");
-          option2.value = station.name;
-          option2.text = station.name;
-          toSelect.appendChild(option2);
-        });
-      } catch (error) {
-        console.error("Error fetching stations:", error);
-      }
-    }
-
-    // form submit
-    document.getElementById('route-form').addEventListener('submit', async function (event) {
-      event.preventDefault();
-      initMap();
-      const alertDistance = Number(document.getElementById('alertme').value);
-      const fromStation = document.getElementById('fromSelect').value;
-      const toStation = document.getElementById('toSelect').value;
-
-      document.getElementById('display-from').textContent = fromStation;
-      document.getElementById('display-to').textContent = toStation;
-      document.getElementById('alert').textContent = isNaN(alertDistance) ? '--' : `${alertDistance} m`;
-      // Get user location before making the API call
-      navigator.geolocation.getCurrentPosition(async position => {
-        const userlat = position.coords.latitude;
-        const userlong = position.coords.longitude;
-        try {
-          const response = await fetch('http://localhost:4000/api/getRoute', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ from: fromStation, to: toStation, userlat, userlong, alertDistance })
-          });
-          const result = await response.json();
-          console.log("Backend:", result);
-
-          // If your backend sends { distanceMetersFormatted, durationSecondsFormatted, alertdis }
-          const { distanceMetersFormatted, durationSecondsFormatted, alertdis, routeCoordinates } = result;
-
-          document.getElementById("distance").textContent = distanceMetersFormatted || '--';
-          document.getElementById("duration").textContent = durationSecondsFormatted || '--';
-          document.getElementById("alert").textContent = alertdis || '--';
-
-          // ----- Update Map with route and markers -----
-          if (Array.isArray(routeCoordinates) && routeCoordinates.length > 0) {
-            clearMapLayers();
-            // Draw route
-            routeLayer = L.polyline(routeCoordinates, { color: '#22c55e', weight: 5, opacity: 0.9 }).addTo(map);
-            // From/To markers based on route endpoints
-            fromMarker = L.marker(routeCoordinates[0]).addTo(map).bindPopup(`From: ${fromStation}`);
-            toMarker = L.marker(routeCoordinates[routeCoordinates.length - 1]).addTo(map).bindPopup(`To: ${toStation}`);
-            // User marker (distinct style to avoid confusion)
-            userMarker = L.circleMarker([userlat, userlong], {
-              radius: 8,
-              color: '#ffffff',       // border color
-              weight: 2,
-              fillColor: '#ef4444',   // Tailwind red-500
-              fillOpacity: 0.9
-            }).addTo(map).bindPopup('Your location');
-            // Fit bounds
-            const bounds = L.latLngBounds(routeCoordinates.concat([[userlat, userlong]]));
-            map.fitBounds(bounds, { padding: [20, 20] });
-            // Optional: alert radius around destination
-            if (!isNaN(alertDistance) && alertDistance > 0) {
-              alertCircle = L.circle(routeCoordinates[routeCoordinates.length - 1], {
-                radius: alertDistance,
-                color: '#f59e0b',
-                fillColor: '#f59e0b',
-                fillOpacity: 0.15
-              }).addTo(map);
-            }
-          }
-
-        } catch (err) {
-          console.error("Request failed:", err);
-        }
-      });
-    });
-
-    loadStations();
-  </script>
-
-</body>
+    <!-- Leaflet JS for global L -->
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 
 </html>
