@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import sound from './assets/sound.wav'
 
 // Uses Leaflet loaded from CDN in index.html (global L)
+function playAudio() {
+  const audio = new Audio(sound)
+  audio.play()
+}
 
 function App() {
   // form state
@@ -183,6 +188,9 @@ function App() {
                 <span className="text-gray-300">{to || '--'}</span>
               </div>
             </div>
+            <button onClick={playAudio} className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+              Play Alert Sound
+            </button>
             <div className="border-t border-gray-700 my-4 text-align=left"></div>
             <p><span className="font-medium">Distance:</span> <span>{distance}</span></p>
             <p><span className="font-medium">Duration:</span> <span>{duration}</span></p>
