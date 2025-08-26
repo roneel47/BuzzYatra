@@ -91,11 +91,16 @@ function App() {
         body: JSON.stringify({ from, to, userlat, userlong, alertDistance: Number.isFinite(alertNum) ? alertNum : undefined })
       })
       const result = await res.json()
-      const { distanceMetersFormatted, durationSecondsFormatted, alertdis, routeCoordinates } = result || {}
+  const { distanceMetersFormatted, durationSecondsFormatted, alertdis, routeCoordinates } = result || {}
 
       setDistance(distanceMetersFormatted || '--')
       setDuration(durationSecondsFormatted || '--')
       setAlertDisp(alertdis || (Number.isFinite(alertNum) ? `${alertNum} m` : '--'))
+
+      // Play sound only when backend indicates a positive alert
+      if (typeof alertdis === 'string' && alertdis.toLowerCase().startsWith('alert')) {
+        playAudio()
+      }
 
       if (L && mapRef.current && Array.isArray(routeCoordinates) && routeCoordinates.length > 0) {
         const map = mapRef.current

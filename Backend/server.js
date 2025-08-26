@@ -87,10 +87,11 @@ app.post('/api/getRoute', async (req, res) => {
     const coordinatesLatLng = coordinatesLngLat.map(c => [c[1], c[0]]);
     const distance = getDistance(userlat, userlong, toStation.lat, toStation.long);
     const distanceFormatted = Math.round(distance / 1000) + " km";
-    if(distance < alertDistance){
-         alertdis = "Alert " + distance + " (" + distanceFormatted + ")";
+    let alertdis;
+    if (Number.isFinite(alertDistance) && distance < alertDistance) {
+      alertdis = "Alert " + distance + " (" + distanceFormatted + ")";
     } else {
-         alertdis = "Distance is far Alert " + distance + " (" + distanceFormatted + ")";
+      alertdis = "No alert: " + distance + " (" + distanceFormatted + ")";
     }
 
     return res.json({
