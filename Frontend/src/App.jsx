@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import sound from './assets/sound.wav'
+import sound from './assets/sound.mp3'
 
 // Uses Leaflet loaded from CDN in index.html (global L)
 function playAudio() {
