@@ -19,11 +19,23 @@ function App() {
   const [distance, setDistance] = useState('--')
   const [duration, setDuration] = useState('--')
   const [alertDisp, setAlertDisp] = useState('--')
+  const [geoStatus, setGeoStatus] = useState('idle')
 
   // map refs
   const mapRef = useRef(null)
   const mapContainerRef = useRef(null)
   const layersRef = useRef({ route: null, from: null, to: null, user: null, circle: null })
+  // refs for dynamic location updates
+  const destinationRef = useRef(null) // { lat, lng }
+  const watchIdRef = useRef(null) // retained for potential future use
+  const lastUpdateRef = useRef(0)
+  const alertTriggeredRef = useRef(false)
+  const UPDATE_SECONDS = 1 // faster polling interval (seconds)
+  const ANIMATION_MS = 600 // duration for smooth marker transitions
+  const pollSecondsRef = useRef(UPDATE_SECONDS)
+  const fallbackTimerRef = useRef(null)
+  const lastCoordRef = useRef(null) // {lat, lng}
+  const animFrameRef = useRef(null)
 
   // lazy getter for global L
   const L = useMemo(() => (typeof window !== 'undefined' ? window.L : undefined), [])
@@ -38,6 +50,21 @@ function App() {
     }).addTo(m)
     mapRef.current = m
   }, [L])
+
+  // cleanup watcher on unmount
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current)
+      }
+      if (fallbackTimerRef.current) {
+        clearInterval(fallbackTimerRef.current)
+      }
+    }
+  }, [])
+
+  // keep ref in sync with constant (in case future adjustments)
+  useEffect(() => { pollSecondsRef.current = UPDATE_SECONDS }, [UPDATE_SECONDS])
 
   // fetch stations on mount
   useEffect(() => {
@@ -66,6 +93,129 @@ function App() {
     if (to) { map.removeLayer(to); layersRef.current.to = null }
     if (user) { map.removeLayer(user); layersRef.current.user = null }
     if (circle) { map.removeLayer(circle); layersRef.current.circle = null }
+  }
+
+  // simple haversine (meters)
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371e3
+    const toRad = (d) => d * Math.PI / 180
+    const dLat = toRad(lat2 - lat1)
+    const dLon = toRad(lon2 - lon1)
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }
+
+  function stopWatching() {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current)
+      watchIdRef.current = null
+    }
+    if (fallbackTimerRef.current) {
+      clearInterval(fallbackTimerRef.current)
+      fallbackTimerRef.current = null
+    }
+    setGeoStatus('stopped')
+  }
+
+  function applyPositionUpdate(latitude, longitude, alertNum) {
+    const map = mapRef.current
+    if (map) {
+      if (layersRef.current.user) {
+        // Smooth animation between last and new coordinate
+        const marker = layersRef.current.user
+        const from = lastCoordRef.current
+        const to = { lat: latitude, lng: longitude }
+        lastCoordRef.current = to
+        if (!from) {
+          marker.setLatLng([latitude, longitude])
+        } else {
+          if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+          const start = performance.now()
+          const latDiff = to.lat - from.lat
+            const lngDiff = to.lng - from.lng
+          const step = (now) => {
+            const t = Math.min(1, (now - start) / ANIMATION_MS)
+            const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t // easeInOutQuad
+            const curLat = from.lat + latDiff * ease
+            const curLng = from.lng + lngDiff * ease
+            marker.setLatLng([curLat, curLng])
+            if (t < 1) {
+              animFrameRef.current = requestAnimationFrame(step)
+            }
+          }
+          animFrameRef.current = requestAnimationFrame(step)
+        }
+      } else if (window.L) {
+        const userM = window.L.circleMarker([latitude, longitude], {
+          radius: 8,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: '#ef4444',
+          fillOpacity: 0.9
+        }).addTo(map).bindPopup('Your location')
+        layersRef.current.user = userM
+        lastCoordRef.current = { lat: latitude, lng: longitude }
+      }
+      // gentle auto-pan if user near edge
+      if (!map.getBounds().pad(-0.25).contains([latitude, longitude])) {
+        map.panTo([latitude, longitude])
+      }
+    }
+    const dest = destinationRef.current
+    if (!dest) return
+    if (Number.isFinite(alertNum)) {
+      const distance = haversine(latitude, longitude, dest.lat, dest.lng)
+      const distanceFormatted = `${Math.round(distance)} m`
+      if (distance <= alertNum) {
+        if (!alertTriggeredRef.current) {
+          setAlertDisp(`Alert: ${distanceFormatted}`)
+          playAudio()
+          alertTriggeredRef.current = true
+        } else {
+          setAlertDisp(`Alert: ${distanceFormatted}`)
+        }
+      } else {
+        setAlertDisp(`No alert: ${distanceFormatted}`)
+        alertTriggeredRef.current = false
+      }
+    }
+  }
+
+  // watchPosition (low latency) + polling fallback for reliability
+  function startWatching(alertNum) {
+    stopWatching()
+    if (!destinationRef.current) return
+    if (!navigator.geolocation) {
+      setGeoStatus('geolocation not supported')
+      return
+    }
+    setGeoStatus('starting')
+    alertTriggeredRef.current = false
+    // High-frequency updates via watchPosition (no throttle; animation handles smoothness)
+    watchIdRef.current = navigator.geolocation.watchPosition(pos => {
+      const { latitude, longitude } = pos.coords
+      lastUpdateRef.current = Date.now()
+      applyPositionUpdate(latitude, longitude, alertNum)
+      setGeoStatus('watch')
+    }, err => {
+      console.warn('[Geo watch] error', err)
+      setGeoStatus('watch error: ' + err.code)
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 })
+
+    // Polling fallback ensures periodic refresh even if watch stalls / mock tools only patch one API.
+    const poll = () => navigator.geolocation.getCurrentPosition(pos => {
+      const { latitude, longitude } = pos.coords
+      // Skip if last watch update very recent (< UPDATE_SECONDS * 500ms) to avoid double updates
+      if (Date.now() - lastUpdateRef.current < UPDATE_SECONDS * 500) return
+      lastUpdateRef.current = Date.now()
+      applyPositionUpdate(latitude, longitude, alertNum)
+      setGeoStatus('poll')
+    }, () => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 8000 })
+    poll()
+    fallbackTimerRef.current = setInterval(poll, pollSecondsRef.current * 1000)
   }
 
   async function onSubmit(e) {
@@ -118,6 +268,9 @@ function App() {
         }).addTo(map).bindPopup('Your location')
 
         layersRef.current = { route, from: fromM, to: toM, user: userM, circle: null }
+        // store destination for live tracking
+        const destLatLng = routeCoordinates[routeCoordinates.length - 1]
+        destinationRef.current = { lat: destLatLng[0], lng: destLatLng[1] }
 
         const bounds = L.latLngBounds(routeCoordinates.concat([[userlat, userlong]]))
         map.fitBounds(bounds, { padding: [20, 20] })
@@ -130,6 +283,12 @@ function App() {
             fillOpacity: 0.15
           }).addTo(map)
           layersRef.current.circle = circle
+        }
+        // start dynamic updates
+        if (Number.isFinite(alertNum) && alertNum > 0) {
+          startWatching(alertNum)
+        } else {
+          stopWatching()
         }
       }
     } catch (err) {
@@ -197,6 +356,8 @@ function App() {
             <p><span className="font-medium">Distance:</span> <span>{distance}</span></p>
             <p><span className="font-medium">Duration:</span> <span>{duration}</span></p>
             <p><span className="font-medium">Alert:</span> <span className="text-yellow-400">{alertDisp}</span></p>
+            <p className="text-xs text-gray-400">Live tracking every {pollSecondsRef.current}s (fixed)</p>
+            <p className="text-[10px] text-gray-500">Tracking status: {geoStatus}</p>
           </div>
           <div ref={mapContainerRef} className="mt-6 rounded-lg overflow-hidden border border-gray-700" style={{ height: 340 }}></div>
         </div>
