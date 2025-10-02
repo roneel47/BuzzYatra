@@ -1,6 +1,4 @@
 node_modules
-package-lock.json
-package.json
 /Backend/.env
 
 # --- Global Node / Backend / Frontend ---
