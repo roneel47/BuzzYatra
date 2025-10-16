@@ -25,13 +25,13 @@ const CTA = () => {
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </a>
-            <Button 
+            {/* <Button 
               variant="outline" 
               size="lg" 
               className="text-lg px-8 bg-white/10 border-white/20 text-white hover:bg-white/20"
             >
               Contact Us
-            </Button>
+            </Button> */}
           </div>
 
           {/* Trust Indicators */}
