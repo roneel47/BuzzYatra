@@ -1,14 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import sound from './assets/sound.mp3'
-
+const apiBaseUrl = "http://localhost:4000/api";
 // Uses Leaflet loaded from CDN in index.html (global L)
 function playAudio() {
-  const audio = new Audio(sound)
-  audio.play()
+  try {
+    const audio = new Audio(sound)
+    audio.play()
+  } catch (e) {
+    // ignore autoplay errors
+    console.warn('Audio play failed', e)
+  }
 }
 
-function App() {
+/* -------------------------
+   RouteTracker component
+   ------------------------- */
+function RouteTracker() {
   // form state
   const [stations, setStations] = useState([])
   const [from, setFrom] = useState('')
@@ -25,13 +33,14 @@ function App() {
   const mapRef = useRef(null)
   const mapContainerRef = useRef(null)
   const layersRef = useRef({ route: null, from: null, to: null, user: null, circle: null })
+
   // refs for dynamic location updates
   const destinationRef = useRef(null) // { lat, lng }
-  const watchIdRef = useRef(null) // retained for potential future use
+  const watchIdRef = useRef(null)
   const lastUpdateRef = useRef(0)
   const alertTriggeredRef = useRef(false)
-  const UPDATE_SECONDS = 1 // faster polling interval (seconds)
-  const ANIMATION_MS = 600 // duration for smooth marker transitions
+  const UPDATE_SECONDS = 1
+  const ANIMATION_MS = 600
   const pollSecondsRef = useRef(UPDATE_SECONDS)
   const fallbackTimerRef = useRef(null)
   const lastCoordRef = useRef(null) // {lat, lng}
@@ -49,6 +58,9 @@ function App() {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(m)
     mapRef.current = m
+    return () => {
+      if (m) m.remove()
+    }
   }, [L])
 
   // cleanup watcher on unmount
@@ -60,28 +72,31 @@ function App() {
       if (fallbackTimerRef.current) {
         clearInterval(fallbackTimerRef.current)
       }
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
     }
   }, [])
 
-  // keep ref in sync with constant (in case future adjustments)
+  // keep ref in sync with constant
   useEffect(() => { pollSecondsRef.current = UPDATE_SECONDS }, [UPDATE_SECONDS])
 
   // fetch stations on mount
   useEffect(() => {
-    async function run() {
-      try {
-        const res = await fetch('http://localhost:4000/api/getStation')
-        const data = await res.json()
-        setStations(Array.isArray(data) ? data : [])
-        if (Array.isArray(data) && data.length > 0) {
-          setFrom(data[0].name || '')
-          setTo(data[0].name || '')
+    let mounted = true
+      ; (async function run() {
+        try {
+          const res = await fetch('http://localhost:4000/api/getStation')
+          const data = await res.json()
+          if (!mounted) return
+          setStations(Array.isArray(data) ? data : [])
+          if (Array.isArray(data) && data.length > 0) {
+            setFrom(data[0].name || '')
+            setTo(data[0].name || '')
+          }
+        } catch (e) {
+          console.error('Error fetching stations:', e)
         }
-      } catch (e) {
-        console.error('Error fetching stations:', e)
-      }
-    }
-    run()
+      })()
+    return () => { mounted = false }
   }, [])
 
   function clearLayers() {
@@ -124,7 +139,6 @@ function App() {
     const map = mapRef.current
     if (map) {
       if (layersRef.current.user) {
-        // Smooth animation between last and new coordinate
         const marker = layersRef.current.user
         const from = lastCoordRef.current
         const to = { lat: latitude, lng: longitude }
@@ -135,7 +149,7 @@ function App() {
           if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
           const start = performance.now()
           const latDiff = to.lat - from.lat
-            const lngDiff = to.lng - from.lng
+          const lngDiff = to.lng - from.lng
           const step = (now) => {
             const t = Math.min(1, (now - start) / ANIMATION_MS)
             const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t // easeInOutQuad
@@ -159,11 +173,17 @@ function App() {
         layersRef.current.user = userM
         lastCoordRef.current = { lat: latitude, lng: longitude }
       }
+
       // gentle auto-pan if user near edge
-      if (!map.getBounds().pad(-0.25).contains([latitude, longitude])) {
-        map.panTo([latitude, longitude])
+      try {
+        if (!map.getBounds().pad(-0.25).contains([latitude, longitude])) {
+          map.panTo([latitude, longitude])
+        }
+      } catch (e) {
+        // sometimes map.getBounds() might throw if map isn't ready - ignore
       }
     }
+
     const dest = destinationRef.current
     if (!dest) return
     if (Number.isFinite(alertNum)) {
@@ -194,7 +214,7 @@ function App() {
     }
     setGeoStatus('starting')
     alertTriggeredRef.current = false
-    // High-frequency updates via watchPosition (no throttle; animation handles smoothness)
+
     watchIdRef.current = navigator.geolocation.watchPosition(pos => {
       const { latitude, longitude } = pos.coords
       lastUpdateRef.current = Date.now()
@@ -202,18 +222,18 @@ function App() {
       setGeoStatus('watch')
     }, err => {
       console.warn('[Geo watch] error', err)
-      setGeoStatus('watch error: ' + err.code)
+      setGeoStatus('watch error: ' + (err && err.code ? err.code : 'unknown'))
     }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 })
 
-    // Polling fallback ensures periodic refresh even if watch stalls / mock tools only patch one API.
+    // Polling fallback
     const poll = () => navigator.geolocation.getCurrentPosition(pos => {
       const { latitude, longitude } = pos.coords
-      // Skip if last watch update very recent (< UPDATE_SECONDS * 500ms) to avoid double updates
+      // Skip if last watch update very recent (< UPDATE_SECONDS * 500ms)
       if (Date.now() - lastUpdateRef.current < UPDATE_SECONDS * 500) return
       lastUpdateRef.current = Date.now()
       applyPositionUpdate(latitude, longitude, alertNum)
       setGeoStatus('poll')
-    }, () => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 8000 })
+    }, () => { }, { enableHighAccuracy: true, maximumAge: 0, timeout: 8000 })
     poll()
     fallbackTimerRef.current = setInterval(poll, pollSecondsRef.current * 1000)
   }
@@ -241,7 +261,7 @@ function App() {
         body: JSON.stringify({ from, to, userlat, userlong, alertDistance: Number.isFinite(alertNum) ? alertNum : undefined })
       })
       const result = await res.json()
-  const { distanceMetersFormatted, durationSecondsFormatted, alertdis, routeCoordinates } = result || {}
+      const { distanceMetersFormatted, durationSecondsFormatted, alertdis, routeCoordinates } = result || {}
 
       setDistance(distanceMetersFormatted || '--')
       setDuration(durationSecondsFormatted || '--')
@@ -297,7 +317,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4 py-8">
       <div className="w-full max-w-4xl mx-auto p-4 md:p-8 flex flex-col md:flex-row md:space-x-8 space-y-8 md:space-y-0">
         {/* Left Card */}
         <div className="md:w-1/2 bg-gray-800 bg-opacity-50 rounded-2xl p-6 md:p-8 backdrop-filter backdrop-blur-lg border border-gray-700">
@@ -324,7 +344,7 @@ function App() {
               </div>
               <div>
                 <label className="block text-left text-white mb-2" htmlFor="alertme">Alert Metre:</label>
-                <input id="alertme" name="alertme" required placeholder="Enter the distance in metres"
+                <input id="alertme" name="alertme" placeholder="Enter the distance in metres"
                   value={alertDistance} onChange={(e) => setAlertDistance(e.target.value)}
                   className="w-full bg-gray-700 text-white rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-green-400" />
               </div>
@@ -352,7 +372,7 @@ function App() {
                 <span className="text-gray-300">{to || '--'}</span>
               </div>
             </div>
-            <div className="border-t border-gray-700 my-4 text-align=left"></div>
+            <div className="border-t border-gray-700 my-4" style={{ textAlign: 'left' }}></div>
             <p><span className="font-medium">Distance:</span> <span>{distance}</span></p>
             <p><span className="font-medium">Duration:</span> <span>{duration}</span></p>
             <p><span className="font-medium">Alert:</span> <span className="text-yellow-400">{alertDisp}</span></p>
@@ -366,4 +386,240 @@ function App() {
   )
 }
 
-export default App
+/* -------------------------
+   SOSEmergencyApp component
+   ------------------------- */
+
+function SOSEmergencyApp() {
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+  const [googleMapsLink, setGoogleMapsLink] = useState('');
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [isSendingSMS, setIsSendingSMS] = useState(false);
+  const [locationError, setLocationError] = useState('');
+  const [smsStatus, setSmsStatus] = useState('');
+
+  const apiBaseUrl = "http://localhost:4000/api";
+
+  // 🔹 Get Current Location
+  const getCurrentLocation = () => {
+    setIsLoadingLocation(true);
+    setLocationError('');
+    setSmsStatus('');
+    return new Promise((resolve, reject) => {
+      if (!('geolocation' in navigator)) {
+        const msg = 'Geolocation is not supported by this browser.';
+        setLocationError(msg);
+        setIsLoadingLocation(false);
+        reject(new Error(msg));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude: lat, longitude: lng } = position.coords;
+          setLatitude(lat);
+          setLongitude(lng);
+          setGoogleMapsLink(`https://www.google.com/maps?q=${lat},${lng}`);
+          setIsLoadingLocation(false);
+          resolve(position);
+        },
+        (error) => {
+          setIsLoadingLocation(false);
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              setLocationError('Location access denied by user.');
+              break;
+            case error.POSITION_UNAVAILABLE:
+              setLocationError('Location information is unavailable.');
+              break;
+            case error.TIMEOUT:
+              setLocationError('Location request timed out.');
+              break;
+            default:
+              setLocationError('An unknown error occurred while getting location.');
+          }
+          reject(error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+    });
+  };
+
+  // 🔹 Send SOS Message
+  const sendSOSMessage = async () => {
+    if (latitude == null || longitude == null) {
+      setSmsStatus('Please get your location first!');
+      return;
+    }
+
+    if (!phoneNumber || phoneNumber.trim() === '') {
+      setSmsStatus('Please enter a phone number!');
+      return;
+    }
+
+    const sosData = {
+      phoneNumber,
+      latitude,
+      longitude,
+      googleMapsLink: `https://www.google.com/maps?q=${latitude},${longitude}`,
+    };
+
+    setIsSendingSMS(true);
+    setSmsStatus('');
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/sos`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(sosData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      await new Promise((r) => setTimeout(r, 1000));
+      setSmsStatus('✅ SOS message sent successfully!');
+    } catch (e) {
+      console.error('Error sending SOS', e);
+      setSmsStatus('❌ Failed to send SOS message. Please try again.');
+    } finally {
+      setIsSendingSMS(false);
+    }
+  };
+
+  // 🔹 Get location then send automatically
+  const sendSOSWithLocation = async () => {
+    if (!phoneNumber || phoneNumber.trim() === '') {
+      setSmsStatus('Please enter a phone number!');
+      return;
+    }
+    setSmsStatus('');
+    setIsSendingSMS(true);
+
+    try {
+      await getCurrentLocation();
+      await new Promise((r) => setTimeout(r, 800));
+      await sendSOSMessage();
+    } catch (e) {
+      console.warn('Could not send SOS with location', e);
+      setIsSendingSMS(false);
+    }
+  };
+
+  // 🔹 UI
+  return (
+    <div className="max-w-md mx-auto mt-6 p-6 bg-white shadow-xl rounded-2xl border">
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold">🚨 SOS Emergency App</h1>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block font-semibold mb-2">
+            Emergency Contact Phone Number:
+          </label>
+          <input
+            type="tel"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder="+1234567890"
+            disabled={isLoadingLocation || isSendingSMS}
+            className="w-full border rounded-lg p-2 focus:outline-none focus:ring focus:ring-red-400"
+          />
+        </div>
+
+        <div className="bg-gray-50 rounded-lg p-4">
+          {latitude != null && longitude != null && (
+            <div>
+              <h3 className="font-semibold mb-1">📍 Current Location:</h3>
+              <p><strong>Latitude:</strong> {latitude}</p>
+              <p><strong>Longitude:</strong> {longitude}</p>
+              {googleMapsLink && (
+                <a
+                  href={googleMapsLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline mt-2 inline-block"
+                >
+                  🗺️ Open in Google Maps
+                </a>
+              )}
+            </div>
+          )}
+
+          {isLoadingLocation && (
+            <p className="text-yellow-600">📡 Getting your location...</p>
+          )}
+          {isSendingSMS && (
+            <p className="text-blue-600">📤 Sending SOS message...</p>
+          )}
+          {locationError && (
+            <p className="text-red-600 font-semibold mt-2">❌ {locationError}</p>
+          )}
+          {smsStatus && (
+            <p
+              className={`mt-2 font-semibold ${
+                smsStatus.includes('✅')
+                  ? 'text-green-600'
+                  : 'text-red-600'
+              }`}
+            >
+              {smsStatus}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-col gap-3">
+        <button
+          onClick={() => getCurrentLocation()}
+          disabled={isLoadingLocation || isSendingSMS}
+          className="bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50"
+        >
+          📍 Get Location Only
+        </button>
+
+        <button
+          onClick={sendSOSMessage}
+          disabled={latitude == null || longitude == null || !phoneNumber || isSendingSMS}
+          className="bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        >
+          📤 Send SOS with Current Location
+        </button>
+
+        <button
+          onClick={sendSOSWithLocation}
+          disabled={!phoneNumber || isLoadingLocation || isSendingSMS}
+          className="bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50"
+        >
+          🚨 EMERGENCY SOS
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------
+   Combined App export
+   ------------------------- */
+export default function App() {
+  return (
+    <div>
+      {/* Main route tracker */}
+      <RouteTracker />
+      {/* SOS card below (you can place it anywhere in your layout) */}
+      <div className="max-w-4xl mx-auto p-4">
+        <SOSEmergencyApp />
+      </div>
+    </div>
+  )
+}
