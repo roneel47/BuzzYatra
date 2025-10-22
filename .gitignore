@@ -19,8 +19,8 @@ build
 coverage
 
 # Environment files
-.env
-.env.*.local
+
+
 
 # Editor directories
 .vscode/*
