@@ -512,14 +512,14 @@ function SOSEmergencyApp() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-6 p-6 bg-white shadow-xl rounded-2xl border">
+    <div className="bg-gray-800 bg-opacity-50 rounded-2xl p-6 backdrop-filter backdrop-blur-lg border border-gray-700">
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold">🚨 SOS Emergency App</h1>
+        <h1 className="text-2xl font-bold text-white">🚨 SOS Emergency App</h1>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="block font-semibold mb-2">
+          <label className="block font-semibold mb-2 text-white">
             Emergency Contact Phone Number:
           </label>
           <input
@@ -528,22 +528,22 @@ function SOSEmergencyApp() {
             onChange={(e) => setPhoneNumber(e.target.value)}
             placeholder="+1234567890"
             disabled={isLoadingLocation || isSendingSMS}
-            className="w-full border rounded-lg p-2 focus:outline-none focus:ring focus:ring-red-400"
+            className="w-full bg-gray-700 text-white rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-gray-400"
           />
         </div>
 
-        <div className="bg-gray-50 rounded-lg p-4">
+        <div className="bg-gray-700 bg-opacity-50 rounded-lg p-4 border border-gray-600">
           {latitude != null && longitude != null && (
             <div>
-              <h3 className="font-semibold mb-1">📍 Current Location:</h3>
-              <p><strong>Latitude:</strong> {latitude}</p>
-              <p><strong>Longitude:</strong> {longitude}</p>
+              <h3 className="font-semibold mb-1 text-white">📍 Current Location:</h3>
+              <p className="text-gray-300"><strong>Latitude:</strong> {latitude}</p>
+              <p className="text-gray-300"><strong>Longitude:</strong> {longitude}</p>
               {googleMapsLink && (
                 <a
                   href={googleMapsLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 underline mt-2 inline-block"
+                  className="text-blue-400 underline mt-2 inline-block hover:text-blue-300"
                 >
                   🗺️ Open in Google Maps
                 </a>
@@ -552,19 +552,19 @@ function SOSEmergencyApp() {
           )}
 
           {isLoadingLocation && (
-            <p className="text-yellow-600">📡 Getting your location...</p>
+            <p className="text-yellow-400">📡 Getting your location...</p>
           )}
           {isSendingSMS && (
-            <p className="text-blue-600">📤 Sending SOS message...</p>
+            <p className="text-blue-400">📤 Sending SOS message...</p>
           )}
           {locationError && (
-            <p className="text-red-600 font-semibold mt-2">❌ {locationError}</p>
+            <p className="text-red-400 font-semibold mt-2">❌ {locationError}</p>
           )}
           {smsStatus && (
             <p
               className={`mt-2 font-semibold ${smsStatus.includes('✅')
-                  ? 'text-green-600'
-                  : 'text-red-600'
+                  ? 'text-green-400'
+                  : 'text-red-400'
                 }`}
             >
               {smsStatus}
@@ -577,7 +577,7 @@ function SOSEmergencyApp() {
         <button
           onClick={() => getCurrentLocation()}
           disabled={isLoadingLocation || isSendingSMS}
-          className="bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50"
+          className="bg-gray-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-700 disabled:opacity-50 transition duration-300"
         >
           📍 Get Location Only
         </button>
@@ -585,7 +585,7 @@ function SOSEmergencyApp() {
         <button
           onClick={sendSOSMessage}
           disabled={latitude == null || longitude == null || !phoneNumber || isSendingSMS}
-          className="bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition duration-300"
         >
           📤 Send SOS with Current Location
         </button>
@@ -593,7 +593,7 @@ function SOSEmergencyApp() {
         <button
           onClick={sendSOSWithLocation}
           disabled={!phoneNumber || isLoadingLocation || isSendingSMS}
-          className="bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50"
+          className="bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 transition duration-300"
         >
           🚨 EMERGENCY SOS
         </button>
