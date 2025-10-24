@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import sound from './assets/sound.mp3'
+
 const apiBaseUrl = "http://localhost:4000/api";
+
 // Uses Leaflet loaded from CDN in index.html (global L)
 function playAudio() {
   try {
@@ -59,7 +61,10 @@ function RouteTracker() {
     }).addTo(m)
     mapRef.current = m
     return () => {
-      if (m) m.remove()
+      if (m) {
+        m.remove()
+        mapRef.current = null
+      }
     }
   }, [L])
 
@@ -81,22 +86,20 @@ function RouteTracker() {
 
   // fetch stations on mount
   useEffect(() => {
-    let mounted = true
-      ; (async function run() {
-        try {
-          const res = await fetch('http://localhost:4000/api/getStation')
-          const data = await res.json()
-          if (!mounted) return
-          setStations(Array.isArray(data) ? data : [])
-          if (Array.isArray(data) && data.length > 0) {
-            setFrom(data[0].name || '')
-            setTo(data[0].name || '')
-          }
-        } catch (e) {
-          console.error('Error fetching stations:', e)
+    async function run() {
+      try {
+        const res = await fetch('http://localhost:4000/api/getStation')
+        const data = await res.json()
+        setStations(Array.isArray(data) ? data : [])
+        if (Array.isArray(data) && data.length > 0) {
+          setFrom(data[0].name || '')
+          setTo(data[0].name || '')
         }
-      })()
-    return () => { mounted = false }
+      } catch (e) {
+        console.error('Error fetching stations:', e)
+      }
+    }
+    run()
   }, [])
 
   function clearLayers() {
@@ -175,12 +178,8 @@ function RouteTracker() {
       }
 
       // gentle auto-pan if user near edge
-      try {
-        if (!map.getBounds().pad(-0.25).contains([latitude, longitude])) {
-          map.panTo([latitude, longitude])
-        }
-      } catch (e) {
-        // sometimes map.getBounds() might throw if map isn't ready - ignore
+      if (!map.getBounds().pad(-0.25).contains([latitude, longitude])) {
+        map.panTo([latitude, longitude])
       }
     }
 
@@ -317,7 +316,7 @@ function RouteTracker() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
       <div className="w-full max-w-4xl mx-auto p-4 md:p-8 flex flex-col md:flex-row md:space-x-8 space-y-8 md:space-y-0">
         {/* Left Card */}
         <div className="md:w-1/2 bg-gray-800 bg-opacity-50 rounded-2xl p-6 md:p-8 backdrop-filter backdrop-blur-lg border border-gray-700">
@@ -389,7 +388,6 @@ function RouteTracker() {
 /* -------------------------
    SOSEmergencyApp component
    ------------------------- */
-
 function SOSEmergencyApp() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [latitude, setLatitude] = useState(null);
@@ -399,8 +397,6 @@ function SOSEmergencyApp() {
   const [isSendingSMS, setIsSendingSMS] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [smsStatus, setSmsStatus] = useState('');
-
-  const apiBaseUrl = "http://localhost:4000/api";
 
   // 🔹 Get Current Location
   const getCurrentLocation = () => {
@@ -515,7 +511,6 @@ function SOSEmergencyApp() {
     }
   };
 
-  // 🔹 UI
   return (
     <div className="max-w-md mx-auto mt-6 p-6 bg-white shadow-xl rounded-2xl border">
       <div className="text-center mb-6">
