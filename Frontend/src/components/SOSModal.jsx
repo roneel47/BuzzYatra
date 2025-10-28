@@ -10,7 +10,7 @@ const SOSModal = ({ isOpen, onClose, userId }) => {
   const [sosStatus, setSosStatus] = useState('');
   const [sosResults, setSosResults] = useState(null);
 
-  const apiBaseUrl = "http://localhost:4000/api";
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
 
   useEffect(() => {
     if (isOpen) {

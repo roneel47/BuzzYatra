@@ -19,7 +19,7 @@ const CTA = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-            <a href='http://localhost:5173'>
+            <a href={import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173'}>
               <Button variant="hero-secondary" size="lg" className="text-lg px-8">
                 Get Started Now
                 <ArrowRight className="h-5 w-5" />

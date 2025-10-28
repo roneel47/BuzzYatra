@@ -1,0 +1,15 @@
+# ⚠️ IMPORTANT: This root netlify.toml is NOT USED
+# 
+# You need to create 2 SEPARATE Netlify sites (one for Landing, one for Frontend)
+# Each site deployment is configured in its respective folder's netlify.toml
+# 
+# See DEPLOYMENT.md for complete instructions
+#
+# Quick Summary:
+# 1. Create Netlify Site #1 for Landing:
+#    - Base directory: Landing
+#    - netlify.toml location: Landing/netlify.toml
+#
+# 2. Create Netlify Site #2 for Frontend:
+#    - Base directory: Frontend
+#    - netlify.toml location: Frontend/netlify.toml

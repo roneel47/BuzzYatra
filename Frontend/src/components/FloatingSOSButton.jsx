@@ -6,7 +6,7 @@ const FloatingSOSButton = ({ userId, isVisible = true, currentLocation }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
-  const apiBaseUrl = "http://localhost:4000/api";
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
 
   // Component mount logging removed for production
 

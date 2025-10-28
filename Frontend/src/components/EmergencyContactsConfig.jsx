@@ -13,7 +13,7 @@ const EmergencyContactsConfig = ({ userId, onClose }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const apiBaseUrl = "http://localhost:4000/api";
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
 
   useEffect(() => {
     fetchContacts();

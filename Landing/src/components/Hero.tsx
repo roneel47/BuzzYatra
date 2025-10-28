@@ -33,7 +33,7 @@ const Hero = () => {
 
           {/* CTA Button */}
           <div className="flex justify-center items-center pt-4">
-            <a href='http://localhost:5173'>
+            <a href={import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173'}>
               <Button variant="hero" size="lg" className="text-lg px-8">
                 {/* <AlertCircle className="h-5 w-5" /> */}
                 Get Started Free

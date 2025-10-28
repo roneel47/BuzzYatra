@@ -16,7 +16,7 @@ export const SOSProvider = ({ children, userId }) => {
   const [lastLocationUpdate, setLastLocationUpdate] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
   
-  const apiBaseUrl = "http://localhost:4000/api";
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
 
   // Monitor online status
   useEffect(() => {

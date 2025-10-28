@@ -19,8 +19,9 @@ build
 coverage
 
 # Environment files
-
-
+.env
+.env.local
+.env.*.local
 
 # Editor directories
 .vscode/*
@@ -35,3 +36,6 @@ coverage
 
 # OS or IDE specific
 Thumbs.db
+
+# Local Netlify folder
+.netlify
