@@ -6,7 +6,7 @@ import SOSModal from './components/SOSModal'
 import EmergencyContactsConfig from './components/EmergencyContactsConfig'
 import SOSProvider from './components/SOSProvider'
 
-const apiBaseUrl = "http://localhost:4000/api";
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
 
 // Simple user ID generation - in production, use proper authentication
 const getUserId = () => {
@@ -103,7 +103,7 @@ function RouteTracker({ onLocationUpdate }) {
   useEffect(() => {
     async function run() {
       try {
-        const res = await fetch('http://localhost:4000/api/getStation')
+        const res = await fetch(`${apiBaseUrl}/getStation`)
         const data = await res.json()
         setStations(Array.isArray(data) ? data : [])
         if (Array.isArray(data) && data.length > 0) {
@@ -291,7 +291,7 @@ function RouteTracker({ onLocationUpdate }) {
       const userlat = pos.coords.latitude
       const userlong = pos.coords.longitude
 
-      const res = await fetch('http://localhost:4000/api/getRoute', {
+      const res = await fetch(`${apiBaseUrl}/getRoute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ from, to, userlat, userlong, alertDistance: Number.isFinite(alertNum) ? alertNum : undefined })
