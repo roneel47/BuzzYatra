@@ -1,8 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import sound from './assets/sound.mp3'
+import FloatingSOSButton from './components/FloatingSOSButton'
+import SOSModal from './components/SOSModal'
+import EmergencyContactsConfig from './components/EmergencyContactsConfig'
+import SOSProvider from './components/SOSProvider'
 
 const apiBaseUrl = "http://localhost:4000/api";
+
+// Simple user ID generation - in production, use proper authentication
+const getUserId = () => {
+  let userId = localStorage.getItem('buzzyatra_user_id');
+  if (!userId) {
+    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('buzzyatra_user_id', userId);
+  }
+  return userId;
+};
 
 // Uses Leaflet loaded from CDN in index.html (global L)
 function playAudio() {
@@ -10,15 +24,14 @@ function playAudio() {
     const audio = new Audio(sound)
     audio.play()
   } catch (e) {
-    // ignore autoplay errors
-    console.warn('Audio play failed', e)
+    // ignore autoplay errors - silent fail for production
   }
 }
 
 /* -------------------------
    RouteTracker component
    ------------------------- */
-function RouteTracker() {
+function RouteTracker({ onLocationUpdate }) {
   // form state
   const [stations, setStations] = useState([])
   const [from, setFrom] = useState('')
@@ -41,8 +54,10 @@ function RouteTracker() {
   const watchIdRef = useRef(null)
   const lastUpdateRef = useRef(0)
   const alertTriggeredRef = useRef(false)
+  const lastAlertTimeRef = useRef(0) // Add cooldown for alerts
   const UPDATE_SECONDS = 1
   const ANIMATION_MS = 600
+  const ALERT_COOLDOWN_MS = 5000 // 5 second cooldown between alerts
   const pollSecondsRef = useRef(UPDATE_SECONDS)
   const fallbackTimerRef = useRef(null)
   const lastCoordRef = useRef(null) // {lat, lng}
@@ -177,6 +192,11 @@ function RouteTracker() {
         lastCoordRef.current = { lat: latitude, lng: longitude }
       }
 
+      // Update parent component with current location
+      if (onLocationUpdate) {
+        onLocationUpdate({ latitude, longitude });
+      }
+
       // gentle auto-pan if user near edge
       if (!map.getBounds().pad(-0.25).contains([latitude, longitude])) {
         map.panTo([latitude, longitude])
@@ -188,17 +208,30 @@ function RouteTracker() {
     if (Number.isFinite(alertNum)) {
       const distance = haversine(latitude, longitude, dest.lat, dest.lng)
       const distanceFormatted = `${Math.round(distance)} m`
+      const currentTime = Date.now()
+      
       if (distance <= alertNum) {
         if (!alertTriggeredRef.current) {
-          setAlertDisp(`Alert: ${distanceFormatted}`)
-          playAudio()
+          // Check cooldown period before playing audio
+          const timeSinceLastAlert = currentTime - lastAlertTimeRef.current
+          if (timeSinceLastAlert >= ALERT_COOLDOWN_MS) {
+            setAlertDisp(`Alert: ${distanceFormatted}`)
+            playAudio()
+            lastAlertTimeRef.current = currentTime
+          } else {
+            setAlertDisp(`Alert: ${distanceFormatted}`)
+          }
           alertTriggeredRef.current = true
         } else {
           setAlertDisp(`Alert: ${distanceFormatted}`)
         }
       } else {
         setAlertDisp(`No alert: ${distanceFormatted}`)
-        alertTriggeredRef.current = false
+        // Only reset alert trigger if we're significantly outside the alert zone
+        // This prevents rapid toggling due to GPS fluctuations
+        if (distance > alertNum + 10) { // 10 meter buffer
+          alertTriggeredRef.current = false
+        }
       }
     }
   }
@@ -242,6 +275,10 @@ function RouteTracker() {
     if (!from || !to) return
     const alertNum = Number(alertDistance)
     setAlertDisp(Number.isFinite(alertNum) ? `${alertNum} m` : '--')
+    
+    // Reset alert state for new route
+    alertTriggeredRef.current = false
+    lastAlertTimeRef.current = 0
 
     // get user location first
     const getPosition = () => new Promise((resolve, reject) => {
@@ -375,8 +412,6 @@ function RouteTracker() {
             <p><span className="font-medium">Distance:</span> <span>{distance}</span></p>
             <p><span className="font-medium">Duration:</span> <span>{duration}</span></p>
             <p><span className="font-medium">Alert:</span> <span className="text-yellow-400">{alertDisp}</span></p>
-            <p className="text-xs text-gray-400">Live tracking every {pollSecondsRef.current}s (fixed)</p>
-            <p className="text-[10px] text-gray-500">Tracking status: {geoStatus}</p>
           </div>
           <div ref={mapContainerRef} className="mt-6 rounded-lg overflow-hidden border border-gray-700" style={{ height: 340 }}></div>
         </div>
@@ -386,234 +421,61 @@ function RouteTracker() {
 }
 
 /* -------------------------
-   SOSEmergencyApp component
+   Old SOS component removed - now using FloatingSOSButton
    ------------------------- */
-function SOSEmergencyApp() {
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [latitude, setLatitude] = useState(null);
-  const [longitude, setLongitude] = useState(null);
-  const [googleMapsLink, setGoogleMapsLink] = useState('');
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [isSendingSMS, setIsSendingSMS] = useState(false);
-  const [locationError, setLocationError] = useState('');
-  const [smsStatus, setSmsStatus] = useState('');
 
-  // 🔹 Get Current Location
-  const getCurrentLocation = () => {
-    setIsLoadingLocation(true);
-    setLocationError('');
-    setSmsStatus('');
-    return new Promise((resolve, reject) => {
-      if (!('geolocation' in navigator)) {
-        const msg = 'Geolocation is not supported by this browser.';
-        setLocationError(msg);
-        setIsLoadingLocation(false);
-        reject(new Error(msg));
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude: lat, longitude: lng } = position.coords;
-          setLatitude(lat);
-          setLongitude(lng);
-          setGoogleMapsLink(`https://www.google.com/maps?q=${lat},${lng}`);
-          setIsLoadingLocation(false);
-          resolve(position);
-        },
-        (error) => {
-          setIsLoadingLocation(false);
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              setLocationError('Location access denied by user.');
-              break;
-            case error.POSITION_UNAVAILABLE:
-              setLocationError('Location information is unavailable.');
-              break;
-            case error.TIMEOUT:
-              setLocationError('Location request timed out.');
-              break;
-            default:
-              setLocationError('An unknown error occurred while getting location.');
-          }
-          reject(error);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        }
-      );
-    });
-  };
-
-  // 🔹 Send SOS Message
-  const sendSOSMessage = async () => {
-    if (latitude == null || longitude == null) {
-      setSmsStatus('Please get your location first!');
-      return;
-    }
-
-    if (!phoneNumber || phoneNumber.trim() === '') {
-      setSmsStatus('Please enter a phone number!');
-      return;
-    }
-
-    const sosData = {
-      phoneNumber,
-      latitude,
-      longitude,
-      googleMapsLink: `https://www.google.com/maps?q=${latitude},${longitude}`,
-    };
-
-    setIsSendingSMS(true);
-    setSmsStatus('');
-
-    try {
-      const response = await fetch(`${apiBaseUrl}/sos`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(sosData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      await new Promise((r) => setTimeout(r, 1000));
-      setSmsStatus('✅ SOS message sent successfully!');
-    } catch (e) {
-      console.error('Error sending SOS', e);
-      setSmsStatus('❌ Failed to send SOS message. Please try again.');
-    } finally {
-      setIsSendingSMS(false);
-    }
-  };
-
-  // 🔹 Get location then send automatically
-  const sendSOSWithLocation = async () => {
-    if (!phoneNumber || phoneNumber.trim() === '') {
-      setSmsStatus('Please enter a phone number!');
-      return;
-    }
-    setSmsStatus('');
-    setIsSendingSMS(true);
-
-    try {
-      await getCurrentLocation();
-      await new Promise((r) => setTimeout(r, 800));
-      await sendSOSMessage();
-    } catch (e) {
-      console.warn('Could not send SOS with location', e);
-      setIsSendingSMS(false);
-    }
-  };
+/* -------------------------
+   Enhanced App with SOS Integration
+   ------------------------- */
+function AppContent() {
+  const [showContactsConfig, setShowContactsConfig] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const userId = getUserId();
 
   return (
-    <div className="bg-gray-800 bg-opacity-50 rounded-2xl p-6 backdrop-filter backdrop-blur-lg border border-gray-700">
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-white">🚨 SOS Emergency App</h1>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <label className="block font-semibold mb-2 text-white">
-            Emergency Contact Phone Number:
-          </label>
-          <input
-            type="tel"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            placeholder="+1234567890"
-            disabled={isLoadingLocation || isSendingSMS}
-            className="w-full bg-gray-700 text-white rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-gray-400"
-          />
-        </div>
-
-        <div className="bg-gray-700 bg-opacity-50 rounded-lg p-4 border border-gray-600">
-          {latitude != null && longitude != null && (
-            <div>
-              <h3 className="font-semibold mb-1 text-white">📍 Current Location:</h3>
-              <p className="text-gray-300"><strong>Latitude:</strong> {latitude}</p>
-              <p className="text-gray-300"><strong>Longitude:</strong> {longitude}</p>
-              {googleMapsLink && (
-                <a
-                  href={googleMapsLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 underline mt-2 inline-block hover:text-blue-300"
-                >
-                  🗺️ Open in Google Maps
-                </a>
-              )}
-            </div>
-          )}
-
-          {isLoadingLocation && (
-            <p className="text-yellow-400">📡 Getting your location...</p>
-          )}
-          {isSendingSMS && (
-            <p className="text-blue-400">📤 Sending SOS message...</p>
-          )}
-          {locationError && (
-            <p className="text-red-400 font-semibold mt-2">❌ {locationError}</p>
-          )}
-          {smsStatus && (
-            <p
-              className={`mt-2 font-semibold ${smsStatus.includes('✅')
-                  ? 'text-green-400'
-                  : 'text-red-400'
-                }`}
-            >
-              {smsStatus}
-            </p>
-          )}
+    <div className="min-h-screen relative">
+      {/* Main Content */}
+      <div className="flex items-center justify-center p-4">
+        <div className="w-full max-w-4xl">
+          <RouteTracker onLocationUpdate={setCurrentLocation} />
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3">
+      {/* Emergency Contacts Configuration Button */}
+      <div className="fixed top-4 right-4 z-40 flex gap-2">
         <button
-          onClick={() => getCurrentLocation()}
-          disabled={isLoadingLocation || isSendingSMS}
-          className="bg-gray-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-700 disabled:opacity-50 transition duration-300"
+          onClick={() => setShowContactsConfig(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition duration-200 text-sm"
         >
-          📍 Get Location Only
+          ⚙️ Emergency Contacts
         </button>
-
-        <button
-          onClick={sendSOSMessage}
-          disabled={latitude == null || longitude == null || !phoneNumber || isSendingSMS}
-          className="bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition duration-300"
-        >
-          📤 Send SOS with Current Location
-        </button>
-
-        <button
-          onClick={sendSOSWithLocation}
-          disabled={!phoneNumber || isLoadingLocation || isSendingSMS}
-          className="bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 transition duration-300"
-        >
-          🚨 EMERGENCY SOS
-        </button>
+        {/* Test button removed for production */}
       </div>
+
+      {/* Floating SOS Button - Direct Action */}
+      <FloatingSOSButton 
+        userId={userId}
+        isVisible={true}
+        currentLocation={currentLocation}
+      />
+
+      {/* Emergency Contacts Configuration Modal */}
+      {showContactsConfig && (
+        <EmergencyContactsConfig
+          userId={userId}
+          onClose={() => setShowContactsConfig(false)}
+        />
+      )}
     </div>
   );
 }
 
-/* -------------------------
-   Combined App export
-   ------------------------- */
 export default function App() {
+  const userId = getUserId();
+  
   return (
-    <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-      <div className="flex-1">
-        <RouteTracker />
-      </div>
-      <div className="w-full md:w-96">
-        <SOSEmergencyApp />
-      </div>
-    </div>
-  )
+    <SOSProvider userId={userId}>
+      <AppContent />
+    </SOSProvider>
+  );
 }

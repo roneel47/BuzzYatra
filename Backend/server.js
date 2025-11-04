@@ -5,6 +5,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const Station = require('./models/Station');
+const EmergencyContact = require('./models/EmergencyContact');
 // twilio setup
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -69,7 +70,7 @@ app.post('/api/getRoute', async (req, res) => {
     }
 
     // Call OpenRouteService Directions
-    console.log("Using coordinates: ", fromStation.lat, fromStation.long, toStation.lat, toStation.long);
+    // Using coordinates for route calculation
     const apiKey = process.env.ORS_API_KEY;
     const url = `https://api.openrouteservice.org/v2/directions/driving-car?profile=driving-car&api_key=${apiKey}&start=${fromStation.long},${fromStation.lat}&end=${toStation.long},${toStation.lat}`;
 
@@ -124,27 +125,134 @@ app.get('/api/getStation', async (req, res) => {
   }
 });
 
+// Emergency Contacts CRUD operations
+app.get('/api/emergency-contacts/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const contacts = await EmergencyContact.find({ userId, isActive: true }).sort({ isPrimary: -1, createdAt: 1 });
+    res.json(contacts);
+  } catch (error) {
+    console.error('Error fetching emergency contacts:', error);
+    res.status(500).json({ error: 'Failed to fetch emergency contacts' });
+  }
+});
+
+app.post('/api/emergency-contacts', async (req, res) => {
+  try {
+    const { userId, name, phoneNumber, relationship, isPrimary } = req.body;
+
+    if (!userId || !name || !phoneNumber || !relationship) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const contact = new EmergencyContact({
+      userId,
+      name,
+      phoneNumber,
+      relationship,
+      isPrimary: isPrimary || false
+    });
+
+    await contact.save();
+    res.status(201).json(contact);
+  } catch (error) {
+    console.error('Error creating emergency contact:', error);
+    res.status(500).json({ error: 'Failed to create emergency contact' });
+  }
+});
+
+app.put('/api/emergency-contacts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const contact = await EmergencyContact.findByIdAndUpdate(id, updates, { new: true });
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+
+    res.json(contact);
+  } catch (error) {
+    console.error('Error updating emergency contact:', error);
+    res.status(500).json({ error: 'Failed to update emergency contact' });
+  }
+});
+
+app.delete('/api/emergency-contacts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await EmergencyContact.findByIdAndUpdate(id, { isActive: false });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting emergency contact:', error);
+    res.status(500).json({ error: 'Failed to delete emergency contact' });
+  }
+});
+
+// Enhanced SOS endpoint
 app.post('/api/sos', async (req, res) => {
   try {
-    const { phoneNumber, latitude, longitude } = req.body;
+    const { userId, latitude, longitude, customMessage } = req.body;
 
-    if (!phoneNumber || !latitude || !longitude) {
-      return res.status(400).json({ error: 'Missing data' });
+    if (!userId || !latitude || !longitude) {
+      return res.status(400).json({ error: 'Missing userId, latitude, or longitude' });
+    }
+
+    // Get all active emergency contacts for the user
+    const contacts = await EmergencyContact.find({ userId, isActive: true });
+
+    if (contacts.length === 0) {
+      return res.status(400).json({ error: 'No emergency contacts found. Please add emergency contacts first.' });
     }
 
     const mapsUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
-    const messageBody = `🚨 SOS Alert! Need help. Location: ${mapsUrl}`;
+    
+    // Short message for trial account compatibility
+    const messageBody = `🚨 EMERGENCY! Help needed!\nLocation: ${mapsUrl}`;
 
-    const message = await client.messages.create({
-      body: messageBody,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: phoneNumber
-    });
+    const results = [];
+    
+    // Send SMS to all emergency contacts
+    for (const contact of contacts) {
+      try {
+        const message = await client.messages.create({
+          body: `${messageBody}\n\nContact: ${contact.name} (${contact.relationship})`,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: contact.phoneNumber
+        });
+        
+        results.push({
+          contact: contact.name,
+          phoneNumber: contact.phoneNumber,
+          success: true,
+          sid: message.sid
+        });
+      } catch (error) {
+        console.error(`Failed to send SMS to ${contact.name}:`, error.message);
+        results.push({
+          contact: contact.name,
+          phoneNumber: contact.phoneNumber,
+          success: false,
+          error: error.message
+        });
+      }
+    }
 
-    res.json({ success: true, sid: message.sid });
+    const successCount = results.filter(r => r.success).length;
+    const totalCount = results.length;
+
+    const response = { 
+      success: successCount > 0,
+      message: `SOS sent to ${successCount} out of ${totalCount} contacts`,
+      results,
+      location: { latitude, longitude, mapsUrl }
+    };
+
+    res.json(response);
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to send SOS message' });
+    console.error('SOS Endpoint Error:', error);
+    res.status(500).json({ error: 'Failed to send SOS alerts' });
   }
 });
 
