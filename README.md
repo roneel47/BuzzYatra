@@ -106,11 +106,5 @@ Have suggestions or feedback?
 Feel free to open an issue or contribute to the project on GitHub!
 
 
----
 
-Would you like me to also create a short **GitHub repository description and taglin
 
-<div align="center">
-  <br/><br/>
-  <i>Making Bengaluru transit safer, smarter, and stress-free.</i>
-</div>
