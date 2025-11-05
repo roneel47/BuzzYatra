@@ -7,89 +7,108 @@
 
 ---
 
-## 🌐 Overview
+# 🚌 BuzzYatra
 
-**Buzzyatra** is a user-focused mobile app designed to enhance public transportation in Bengaluru, India. With real-time route guidance, stop alerts, and emergency SOS features, Buzzyatra empowers commuters and visitors to confidently navigate the BMTC bus system.
+**BuzzYatra** is a web-based application built to enhance the commuting experience for **BMTC (Bengaluru Metropolitan Transport Corporation)** bus passengers.  
+The app aims to make public transport **safer and smarter**, providing real-time **bus stop alerts** and an **SOS one-tap emergency system**.
 
----
-
-## 🚌 Key Features
-
-### 🔍 Intelligent Route & Fare Discovery
-
-* Discover optimal BMTC bus routes between any two Bengaluru locations
-* See travel time, number of transfers, and map-based route visualization
-* Accurate fare calculation for all routes
-* ✨ *Coming Soon:* Real-time bus tracking & arrival predictions
-
-### ⏰ Proactive Stop Alerts
-
-* Set your destination stop and receive timely alerts (audio, vibration, or visual)
-* Customizable alerts based on distance (e.g., 500m before)
-* Works in the background for continuous alerts
-
-### ⚠️ Integrated SOS Safety System
-
-* Add trusted emergency contacts
-* One-tap SOS button for emergencies
-* Instant GPS-based live location sharing with contacts
-* Optional emergency message customization
+As of now, the system has been tested on the route from **Kempegowda Bus Station** to **Hebbal**.
 
 ---
 
-## 📄 Use Cases
+## 🚀 Features
 
-| User Type     | How Buzzyatra Helps                                        |
-| ------------- | ---------------------------------------------------------- |
-| **Tourists**  | Easily explore the city via bus, with clear route guidance |
-| **Commuters** | Avoid missing stops and plan efficient trips               |
-| **Everyone**  | Stay safe with built-in emergency features                 |
+### 🗺️ Bus Stop Alert System
+- Notifies users when their bus is approaching a **predefined radius near the selected stop**.
+- Helps passengers, especially tourists or new commuters, avoid missing their stops.
+- Works in real-time using geolocation tracking.
 
----
-
-## ⚡ Why Buzzyatra?
-
-Bengaluru's current public transport experience is:
-
-* Not integrated with emergency or stop-alert features
-* Confusing for newcomers
-* Lacking real-time guidance and safety mechanisms
-
-**Buzzyatra** solves all this in a single, intuitive app.
+### 🚨 SOS One-Tap Emergency System
+- A **single-tap SOS button** sends an instant alert to registered emergency contacts.
+- Shares **live location details** in emergencies.
+- Designed to ensure passenger safety during transit.
 
 ---
 
-## 🌟 Future Enhancements
+## 🧩 Tech Stack
 
-* 🚍 Real-time bus tracking
-* 🌍 Multi-language support (Kannada, English, etc.)
-* 📂 Offline route access
-* 💳 Fare payment integration (UPI, Cards)
-* 🔔 Travel history & saved locations
-* ♿ Accessibility support for differently abled users
+**Frontend:**  
+- React.js  
+- HTML, CSS, JavaScript  
 
----
+**Backend:**  
+- Node.js  
+- Express.js  
 
-## 📚 License
+**Database:**  
+- MongoDB  
 
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
-
----
-
-## 📚 Acknowledgements
-
-* BMTC Official Website / APIs
-* Google Maps Platform
-* Emergency SMS/GPS APIs
-* Open-source libraries used in the app
+**APIs and Tools:**  
+- OpenStreetMap API for route and map integration  
+- Geolocation API for real-time location tracking  
 
 ---
 
-## 🚀 Contributing
+## ⚙️ Installation & Setup
 
-We welcome contributions! Please check the [CONTRIBUTING.md](CONTRIBUTING.md) for setup and contribution guidelines.
+Follow these steps to set up the project locally:
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/your-username/BuzzYatra.git
+cd BuzzYatra
+2. Install dependencies
+
+Install required packages for both frontend and backend:
+# In root directory
+npm install
+
+# If frontend is in a separate folder
+cd client
+npm install
+3. Set up environment variables
+
+Create a .env file in your backend directory and add:
+
+MONGO_URI=your_mongodb_connection_string
+PORT=5000
+4. Run the project
+
+Start both servers:
+
+# Backend
+npm run server
+
+# Frontend
+npm start🧠 Future Enhancements
+
+Integration as a Progressive Web App (PWA) for offline access.
+
+Mobile app integration for Android and iOS platforms.
+
+👨‍💻 Team Members
+
+Abhishek N
+
+Aditya Pramod Deshapnde
+
+Roneel V
+
+Suhas J
+
+📜 License
+
+This project is licensed under the MIT License – you’re free to use and modify it with attribution.
+
+💬 Feedback
+
+Have suggestions or feedback?
+Feel free to open an issue or contribute to the project on GitHub!
+
 
 ---
+
+Would you like me to also create a short **GitHub repository description and taglin
 
 <div align="center">
   <br/><br/>
